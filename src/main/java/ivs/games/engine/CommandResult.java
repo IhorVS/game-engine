@@ -5,16 +5,19 @@ package ivs.games.engine;
  * or command processing.
  *
  * <p>Processing failures are reported through engine exceptions.
- * Concrete games may provide additional result data.
+ * Concrete games may provide additional result data. Game-specific logic
+ * is responsible for result correctness; the abstract engine checks only
+ * that the result object itself is non-null.
  *
  * @param <S> the game state type
  */
 public interface CommandResult<S> {
 
     /**
-     * Returns the resulting game state.
+     * Returns the resulting immutable game state.
      *
-     * @return the non-null resulting game state
+     * @return the non-null resulting immutable game state
      */
+    @SuppressWarnings("unused")
     S getState();
 }

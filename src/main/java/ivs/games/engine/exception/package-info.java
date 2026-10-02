@@ -7,11 +7,12 @@
  * and preserves the cause of wrapped runtime exceptions.
  *
  * <p>The abstract engine propagates existing engine exceptions unchanged.
- * Other runtime exceptions from game-specific execution or result validation
- * are wrapped in an engine exception. Null input arguments are checked before
+ * Other runtime exceptions from initialization, command validation,
+ * processing or result validation
+ * are wrapped in an engine exception. Null initial setups, states and commands are checked before
  * delegation and reported directly as {@link java.lang.NullPointerException}.
  *
- * <p>Sessions decide how to handle these failures. Exceptions do not provide
- * rollback of mutable game state.
+ * <p>Sessions decide how to handle these failures. Supplied immutable states must remain
+ * unchanged; exceptions do not implement rollback of mutable working data.
  */
 package ivs.games.engine.exception;

@@ -36,4 +36,18 @@ public class EngineCommandException extends EngineException {
     public EngineCommandException(String message, Throwable cause) {
         super(message, cause);
     }
+
+    /**
+     * Validates a condition required for a command to be permitted.
+     *
+     * @param expression the condition to validate
+     * @param message the rejection message format
+     * @param values the arguments used to format the rejection message
+     * @throws EngineCommandException if the expression is false
+     */
+    public static void validate(boolean expression, String message, Object... values) {
+        if (!expression) {
+            throw new EngineCommandException(String.format(message, values));
+        }
+    }
 }

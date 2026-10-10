@@ -26,7 +26,7 @@ public class EngineException extends RuntimeException {
      * Creates an exception with a failure description and its cause.
      *
      * @param message the failure description
-     * @param cause the original cause
+     * @param cause   the original cause
      */
     public EngineException(String message, Throwable cause) {
         super(message, cause);

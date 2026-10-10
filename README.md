@@ -1,6 +1,6 @@
 # game-engine
 
-A Java library providing common contracts and a base implementation for game engines. Concrete games supply their own rules, states, commands and results.
+A Java library providing common contracts and a base implementation for game engines. Concrete games supply their own rules, states and commands.
 
 The library supports board and card games, including games with multiple playing sides. It does not manage users, connections or game sessions.
 
@@ -10,24 +10,23 @@ The library supports board and card games, including games with multiple playing
 - Maven for building the project
 - Apache Commons Lang 3 for base engine validation
 
-JUnit 5 and Mockito are used by the tests.
+JUnit 5 is used by the tests.
 
 ## Main components
 
 | Type                                          | Responsibility                                                                               |
 | --------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | `GameEngine<S, C extends Command, I>`         | Initializes a game and processes a single command                                            |
-| `AbstractGameEngine<S, C extends Command, I>` | Validates arguments and returned results and handles runtime exceptions                      |
+| `AbstractGameEngine<S, C extends Command, I>` | Validates arguments and returned states and handles runtime exceptions                       |
 | `Command`                                     | Marks game-specific typed commands                                                           |
-| `CommandResult<S>`                            | Exposes the resulting state through `getState()`; implementations may add game-specific data |
 | `EngineException`                             | Reports an engine execution failure                                                          |
 | `EngineCommandException`                      | Reports a command rejected by game rules                                                     |
 
-The two engine operations return the same result contract:
+The two engine operations return the game state directly:
 
 ```java
-CommandResult<S> startGame(I initialSetup);
-CommandResult<S> processCommand(S state, C command);
+S startGame(I initialSetup);
+S processCommand(S state, C command);
 ```
 
 ## Engine and session
@@ -38,7 +37,7 @@ A session owns the current state and the association between users and playing s
 
 The engine knows playing sides or seats, not user accounts. For example, it checks whether a white move is legal and whether it is white's turn; the session checks which user may act as white.
 
-## State and result ownership
+## State ownership
 
 `startGame(initialSetup)` validates the supplied initial setup and creates an independent immutable state. The session selects standard or custom initial data; the engine does not provide a no-argument start method or choose a default setup. Concrete game libraries may provide standard setup objects.
 
@@ -46,13 +45,13 @@ The engine knows playing sides or seats, not user accounts. For example, it chec
 
 The session accepts the resulting state only after successful processing and may retain previous snapshots in game history without copying them. On failure, the original snapshot remains unchanged. This guarantee comes from state isolation and immutability, not automatic rollback by exceptions.
 
-A result represents success only. Its `getState()` contract requires a non-null state. Correctness of the result contents, game status and any additional fields is the responsibility of game-specific logic. The abstract engine checks only that the result object itself is non-null; it does not call `getState()` to validate it.
+A returned state represents success only. Game-specific logic is responsible for the correctness of the state, including game status and any additional data. The abstract engine checks only that the returned state is non-null. Failures are reported through exceptions.
 
 ## Validation and exceptions
 
 After null argument checks, the abstract engine calls `validateCommand(state, command)` before `doProcessCommand(state, command)`. This protected hook has an empty default implementation and may be overridden for preliminary rule checks. It must not modify the state or command. If it throws, command processing is skipped.
 
-Checks requiring a candidate resulting state remain in `doProcessCommand(...)`. Game-specific initialization validates the initial setup in `doStartGame(initialSetup)`. Concrete games determine game status and validate result contents.
+Checks requiring a candidate resulting state remain in `doProcessCommand(...)`. Game-specific initialization validates the initial setup in `doStartGame(initialSetup)`. Concrete games determine game status and validate resulting states.
 
 The base implementation provides the following behavior:
 
@@ -61,7 +60,7 @@ The base implementation provides the following behavior:
 | Null initial setup, state or command                                             | `NullPointerException`, before game-specific processing |
 | Game-specific logic throws `EngineException` or a subclass                       | The same exception propagates unchanged                 |
 | Other `RuntimeException` during initialization, command validation or processing | Wrapped in `EngineException`, with the cause preserved  |
-| Game-specific logic returns a null result                                        | Validation failure wrapped in `EngineException`         |
+| Game-specific logic returns a null state                                         | Validation failure wrapped in `EngineException`         |
 
 Wrapped initialization failures use `Failed to start game`. Wrapped command failures use `Failed to process command: <simple class name>`.
 
@@ -72,34 +71,25 @@ Expected command rejection should explicitly use `EngineCommandException`. Arbit
 1. Define an immutable state containing all information needed by the rules, including turn order and relevant history.
 2. Define an initial setup type describing the inputs needed to initialize a game.
 3. Define immutable typed commands implementing `Command`, optionally through a game-specific command interface.
-4. Implement `CommandResult<S>` with a valid resulting state and any additional game data.
-5. Extend `AbstractGameEngine<S, C, I>` and implement `doStartGame(I initialSetup)` and `doProcessCommand(S state, C command)`.
-6. Optionally override `validateCommand(S state, C command)` for preliminary checks.
-7. Supply immutable rule configuration at construction time, ensure shared dependencies are thread-safe and isolate mutable working data from immutable snapshots.
+4. Extend `AbstractGameEngine<S, C, I>` and implement `doStartGame(I initialSetup)` and `doProcessCommand(S state, C command)`.
+5. Optionally override `validateCommand(S state, C command)` for preliminary checks.
+6. Supply immutable rule configuration at construction time, ensure shared dependencies are thread-safe and isolate mutable working data from immutable snapshots.
 
 A minimal example using immutable states:
 
 ```java
 import ivs.games.engine.AbstractGameEngine;
 import ivs.games.engine.Command;
-import ivs.games.engine.CommandResult;
 import ivs.games.engine.exception.EngineCommandException;
 
 record CounterInitialSetup(int value) {}
 record CounterState(int value) {}
 record Increment(int amount) implements Command {}
 
-record CounterResult(CounterState state) implements CommandResult<CounterState> {
-    @Override
-    public CounterState getState() {
-        return state;
-    }
-}
-
 final class CounterEngine extends AbstractGameEngine<CounterState, Increment, CounterInitialSetup> {
     @Override
-    protected CommandResult<CounterState> doStartGame(CounterInitialSetup initialSetup) {
-        return new CounterResult(new CounterState(initialSetup.value()));
+    protected CounterState doStartGame(CounterInitialSetup initialSetup) {
+        return new CounterState(initialSetup.value());
     }
 
     @Override
@@ -110,10 +100,8 @@ final class CounterEngine extends AbstractGameEngine<CounterState, Increment, Co
     }
 
     @Override
-    protected CommandResult<CounterState> doProcessCommand(
-            CounterState state, Increment command) {
-        return new CounterResult(
-                new CounterState(Math.addExact(state.value(), command.amount())));
+    protected CounterState doProcessCommand(CounterState state, Increment command) {
+        return new CounterState(Math.addExact(state.value(), command.amount()));
     }
 }
 ```
@@ -122,9 +110,9 @@ Both starts use the same engine instance:
 
 ```java
 CounterEngine engine = new CounterEngine();
-CounterState standard = engine.startGame(new CounterInitialSetup(0)).getState();
-CounterState custom = engine.startGame(new CounterInitialSetup(10)).getState();
-CounterState next = engine.processCommand(standard, new Increment(2)).getState();
+CounterState standard = engine.startGame(new CounterInitialSetup(0));
+CounterState custom = engine.startGame(new CounterInitialSetup(10));
+CounterState next = engine.processCommand(standard, new Increment(2));
 ```
 
 This example demonstrates initialization, preliminary validation and state isolation; actual games also determine game status according to their rules.

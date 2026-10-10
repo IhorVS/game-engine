@@ -3,8 +3,8 @@
  *
  * <p>An engine initializes games from supplied initial setups and processes
  * individual typed commands.
- * Concrete games define their states, rules, commands and successful results.
- * Result contents and game status are validated by game-specific logic.
+ * Concrete games define their states, rules and commands. Engine operations return
+ * game states directly. State contents and game status are validated by game-specific logic.
  *
  * <p>Engines must be thread-safe and must not retain mutable state belonging
  * to an individual game. Sessions own current game states and process their
@@ -25,6 +25,5 @@
  * @see ivs.games.engine.GameEngine
  * @see ivs.games.engine.AbstractGameEngine
  * @see ivs.games.engine.Command
- * @see ivs.games.engine.CommandResult
  */
 package ivs.games.engine;

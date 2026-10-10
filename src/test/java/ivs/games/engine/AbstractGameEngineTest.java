@@ -14,10 +14,9 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.mock;
 
 /**
- * Tests argument validation, delegation, result validation
+ * Tests argument validation, delegation, resulting state validation
  * and exception handling in {@link AbstractGameEngine}.
  */
 class AbstractGameEngineTest {
@@ -38,29 +37,24 @@ class AbstractGameEngineTest {
         }, null);
 
         NullPointerException exception = assertThrows(
-                NullPointerException.class,
-                () -> engine.startGame(null)
-        );
+                NullPointerException.class, () -> engine.startGame(null));
 
         assertEquals("Initial setup must not be null", exception.getMessage());
     }
 
     /**
-     * Verifies that a null initialization result is reported as an engine failure,
-     * preserving the result validation exception as its cause.
+     * Verifies that a null initial state is reported as an engine failure,
+     * preserving the state validation exception as its cause.
      */
     @Test
-    void startGameWrapsNullResult() {
+    void startGameWrapsNullState() {
         TestEngine engine = new TestEngine(setup -> null, null);
 
         EngineException exception = assertThrows(
-                EngineException.class,
-                () -> engine.startGame(initialSetup)
-        );
+                EngineException.class, () -> engine.startGame(initialSetup));
 
         assertEquals("Failed to start game", exception.getMessage());
-        IllegalStateException cause =
-                assertInstanceOf(IllegalStateException.class, exception.getCause());
+        IllegalStateException cause = assertInstanceOf(IllegalStateException.class, exception.getCause());
         assertEquals("doStartGame() must not return null", cause.getMessage());
     }
 
@@ -76,9 +70,7 @@ class AbstractGameEngineTest {
         }, null);
 
         EngineException exception = assertThrows(
-                EngineException.class,
-                () -> engine.startGame(initialSetup)
-        );
+                EngineException.class, () -> engine.startGame(initialSetup));
 
         assertSame(failure, exception);
     }
@@ -95,9 +87,7 @@ class AbstractGameEngineTest {
         }, null);
 
         EngineException exception = assertThrows(
-                EngineException.class,
-                () -> engine.startGame(initialSetup)
-        );
+                EngineException.class, () -> engine.startGame(initialSetup));
 
         assertEquals("Failed to start game", exception.getMessage());
         assertSame(failure, exception.getCause());
@@ -105,20 +95,19 @@ class AbstractGameEngineTest {
 
     /**
      * Verifies that initialization receives the original setup and returns
-     * the exact result provided by the implementation.
+     * the exact state provided by the implementation.
      */
     @Test
-    @SuppressWarnings("unchecked")
-    void startGameReturnsImplementationResult() {
-        CommandResult<TestState> expectedResult = mock(CommandResult.class);
+    void startGameReturnsImplementationState() {
+        TestState expectedState = new TestState();
         TestEngine engine = new TestEngine(setup -> {
             assertSame(initialSetup, setup);
-            return expectedResult;
+            return expectedState;
         }, null);
 
-        CommandResult<TestState> actualResult = engine.startGame(initialSetup);
+        TestState actualState = engine.startGame(initialSetup);
 
-        assertSame(expectedResult, actualResult);
+        assertSame(expectedState, actualState);
     }
 
     /**
@@ -138,9 +127,7 @@ class AbstractGameEngineTest {
         };
 
         NullPointerException exception = assertThrows(
-                NullPointerException.class,
-                () -> engine.processCommand(null, command)
-        );
+                NullPointerException.class, () -> engine.processCommand(null, command));
 
         assertEquals("State must not be null", exception.getMessage());
     }
@@ -162,9 +149,7 @@ class AbstractGameEngineTest {
         };
 
         NullPointerException exception = assertThrows(
-                NullPointerException.class,
-                () -> engine.processCommand(state, null)
-        );
+                NullPointerException.class, () -> engine.processCommand(state, null));
 
         assertEquals("Command must not be null", exception.getMessage());
     }
@@ -181,28 +166,22 @@ class AbstractGameEngineTest {
             throw new EngineCommandException("Command rejected");
         });
 
-        assertThrows(
-                EngineCommandException.class,
-                () -> engine.processCommand(state, command)
-        );
+        assertThrows(EngineCommandException.class, () -> engine.processCommand(state, command));
     }
 
     /**
-     * Verifies that a null processing result is reported as an engine failure,
+     * Verifies that a null resulting state is reported as an engine failure,
      * including the command class name and preserving the validation cause.
      */
     @Test
-    void processCommandWrapsNullResult() {
+    void processCommandWrapsNullState() {
         TestEngine engine = new TestEngine(null, (currentState, currentCommand) -> null);
 
         EngineException exception = assertThrows(
-                EngineException.class,
-                () -> engine.processCommand(state, command)
-        );
+                EngineException.class, () -> engine.processCommand(state, command));
 
         assertEquals("Failed to process command: TestCommand", exception.getMessage());
-        IllegalStateException cause =
-                assertInstanceOf(IllegalStateException.class, exception.getCause());
+        IllegalStateException cause = assertInstanceOf(IllegalStateException.class, exception.getCause());
         assertEquals("doProcessCommand() must not return null", cause.getMessage());
     }
 
@@ -218,9 +197,7 @@ class AbstractGameEngineTest {
         });
 
         EngineException exception = assertThrows(
-                EngineException.class,
-                () -> engine.processCommand(state, command)
-        );
+                EngineException.class, () -> engine.processCommand(state, command));
 
         assertSame(failure, exception);
     }
@@ -237,9 +214,7 @@ class AbstractGameEngineTest {
         });
 
         EngineCommandException exception = assertThrows(
-                EngineCommandException.class,
-                () -> engine.processCommand(state, command)
-        );
+                EngineCommandException.class, () -> engine.processCommand(state, command));
 
         assertSame(failure, exception);
     }
@@ -256,9 +231,7 @@ class AbstractGameEngineTest {
         });
 
         EngineException exception = assertThrows(
-                EngineException.class,
-                () -> engine.processCommand(state, command)
-        );
+                EngineException.class, () -> engine.processCommand(state, command));
 
         assertEquals("Failed to process command: TestCommand", exception.getMessage());
         assertSame(failure, exception.getCause());
@@ -266,21 +239,20 @@ class AbstractGameEngineTest {
 
     /**
      * Verifies that successful processing delegates the original arguments
-     * and returns the exact result provided by the implementation.
+     * and returns the exact state provided by the implementation.
      */
     @Test
-    @SuppressWarnings("unchecked")
-    void processCommandReturnsImplementationResult() {
-        CommandResult<TestState> expectedResult = mock(CommandResult.class);
+    void processCommandReturnsImplementationState() {
+        TestState expectedState = new TestState();
         TestEngine engine = new TestEngine(null, (currentState, currentCommand) -> {
             assertSame(state, currentState);
             assertSame(command, currentCommand);
-            return expectedResult;
+            return expectedState;
         });
 
-        CommandResult<TestState> actualResult = engine.processCommand(state, command);
+        TestState actualState = engine.processCommand(state, command);
 
-        assertSame(expectedResult, actualResult);
+        assertSame(expectedState, actualState);
     }
 
     /**
@@ -288,13 +260,12 @@ class AbstractGameEngineTest {
      * and runs exactly once before command processing.
      */
     @Test
-    @SuppressWarnings("unchecked")
     void processCommandValidatesBeforeProcessing() {
         List<String> calls = new ArrayList<>();
-        CommandResult<TestState> expectedResult = mock(CommandResult.class);
+        TestState expectedState = new TestState();
         TestEngine engine = new TestEngine(null, (currentState, currentCommand) -> {
             calls.add("process");
-            return expectedResult;
+            return expectedState;
         }) {
             @Override
             protected void validateCommand(TestState currentState, TestCommand currentCommand) {
@@ -304,7 +275,7 @@ class AbstractGameEngineTest {
             }
         };
 
-        assertSame(expectedResult, engine.processCommand(state, command));
+        assertSame(expectedState, engine.processCommand(state, command));
         assertEquals(List.of("validate", "process"), calls);
     }
 
@@ -326,9 +297,7 @@ class AbstractGameEngineTest {
         };
 
         EngineCommandException exception = assertThrows(
-                EngineCommandException.class,
-                () -> engine.processCommand(state, command)
-        );
+                EngineCommandException.class, () -> engine.processCommand(state, command));
 
         assertSame(failure, exception);
     }
@@ -351,22 +320,19 @@ class AbstractGameEngineTest {
         };
 
         EngineException exception = assertThrows(
-                EngineException.class,
-                () -> engine.processCommand(state, command)
-        );
+                EngineException.class, () -> engine.processCommand(state, command));
 
         assertSame(failure, exception);
     }
 
     /**
      * Verifies that a runtime exception other than EngineException thrown
-     * during validation is wrapped in EngineException with the original cause
-     * preserved, and command processing is skipped.
+     * during validation is wrapped with the original cause preserved,
+     * and command processing is skipped.
      */
     @Test
     void processCommandWrapsValidationRuntimeExceptionWithoutProcessing() {
-        IllegalStateException failure =
-                new IllegalStateException("Unexpected validation failure");
+        IllegalStateException failure = new IllegalStateException("Unexpected validation failure");
         TestEngine engine = new TestEngine(null, (currentState, currentCommand) -> {
             fail("doProcessCommand() must not be called");
             return null;
@@ -378,9 +344,7 @@ class AbstractGameEngineTest {
         };
 
         EngineException exception = assertThrows(
-                EngineException.class,
-                () -> engine.processCommand(state, command)
-        );
+                EngineException.class, () -> engine.processCommand(state, command));
 
         assertEquals("Failed to process command: TestCommand", exception.getMessage());
         assertSame(failure, exception.getCause());
@@ -390,7 +354,7 @@ class AbstractGameEngineTest {
     private static final class TestInitialSetup {
     }
 
-    /** Minimal state used to verify argument delegation. */
+    /** Minimal state used to verify argument delegation and returned state identity. */
     private static final class TestState {
     }
 
@@ -401,31 +365,25 @@ class AbstractGameEngineTest {
     /**
      * Delegates game-specific operations to test-provided handlers.
      */
-    private static class TestEngine
-            extends AbstractGameEngine<TestState, TestCommand, TestInitialSetup> {
+    private static class TestEngine extends AbstractGameEngine<TestState, TestCommand, TestInitialSetup> {
 
-        private final Function<TestInitialSetup, CommandResult<TestState>> startHandler;
-        private final BiFunction<TestState, TestCommand, CommandResult<TestState>>
-                processHandler;
+        private final Function<TestInitialSetup, TestState> startHandler;
+        private final BiFunction<TestState, TestCommand, TestState> processHandler;
 
         private TestEngine(
-                Function<TestInitialSetup, CommandResult<TestState>> startHandler,
-                BiFunction<TestState, TestCommand, CommandResult<TestState>> processHandler
-        ) {
+                Function<TestInitialSetup, TestState> startHandler,
+                BiFunction<TestState, TestCommand, TestState> processHandler) {
             this.startHandler = startHandler;
             this.processHandler = processHandler;
         }
 
         @Override
-        protected CommandResult<TestState> doStartGame(TestInitialSetup initialSetup) {
+        protected TestState doStartGame(TestInitialSetup initialSetup) {
             return startHandler.apply(initialSetup);
         }
 
         @Override
-        protected CommandResult<TestState> doProcessCommand(
-                TestState state,
-                TestCommand command
-        ) {
+        protected TestState doProcessCommand(TestState state, TestCommand command) {
             return processHandler.apply(state, command);
         }
     }

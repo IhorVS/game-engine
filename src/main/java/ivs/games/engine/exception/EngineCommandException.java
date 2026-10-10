@@ -31,7 +31,7 @@ public class EngineCommandException extends EngineException {
      * and its cause.
      *
      * @param message the command rejection description
-     * @param cause the cause of the command rejection
+     * @param cause   the cause of the command rejection
      */
     public EngineCommandException(String message, Throwable cause) {
         super(message, cause);
@@ -41,8 +41,8 @@ public class EngineCommandException extends EngineException {
      * Validates a condition required for a command to be permitted.
      *
      * @param expression the condition to validate
-     * @param message the rejection message format
-     * @param values the arguments used to format the rejection message
+     * @param message    the rejection message format
+     * @param values     the arguments used to format the rejection message
      * @throws EngineCommandException if the expression is false
      */
     public static void validate(boolean expression, String message, Object... values) {

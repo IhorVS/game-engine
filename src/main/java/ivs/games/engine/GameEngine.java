@@ -1,8 +1,5 @@
 package ivs.games.engine;
 
-import ivs.games.engine.exception.EngineCommandException;
-import ivs.games.engine.exception.EngineException;
-
 /**
  * Creates games and processes commands according to game-specific rules.
  *
@@ -20,33 +17,19 @@ import ivs.games.engine.exception.EngineException;
 public interface GameEngine<S, C extends Command, I> {
 
     /**
-     * Validates the supplied initial setup and creates an independent
-     * immutable game state, including its game status.
-     *
-     * <p>The supplied setup must remain unchanged.
+     * Creates the initial game state from the supplied setup.
      *
      * @param initialSetup the initial setup for the game
-     * @return a non-null result containing the initial game state
-     * @throws NullPointerException if initialSetup is null
-     * @throws EngineException if the initial setup is invalid
-     *         or initialization fails
+     * @return the non-null initial game state
      */
-    CommandResult<S> startGame(I initialSetup);
+    S startGame(I initialSetup);
 
     /**
-     * Processes a command in the supplied immutable game state.
+     * Processes a command according to game rules without modifying the supplied state.
      *
-     * <p>The supplied state and command must remain unchanged, including
-     * when processing fails. Successful processing returns a result
-     * containing the resulting game state and its game-specific data.
-     *
-     * @param state the current immutable game state
+     * @param state   the current immutable game state
      * @param command the command to process
-     * @return a non-null processing result
-     * @throws NullPointerException if state or command is null
-     * @throws EngineCommandException if the command is not permitted
-     *         by game rules
-     * @throws EngineException if processing fails
+     * @return the non-null resulting game state
      */
-    CommandResult<S> processCommand(S state, C command);
+    S processCommand(S state, C command);
 }

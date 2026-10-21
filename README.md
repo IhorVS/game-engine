@@ -7,7 +7,7 @@ The library supports board and card games, including games with multiple playing
 ## Requirements
 
 - Java 21
-- Maven for building the project
+- Maven 3.9.9 (or use the included Maven Wrapper)
 - Apache Commons Lang 3 for base engine validation
 
 JUnit 5 is used by the tests.
@@ -125,10 +125,22 @@ Concrete engines may use packages such as `ivs.games.engine.chess` and `ivs.game
 
 ## Build and use locally
 
+The Maven Wrapper downloads the configured Maven version if it is not already
+available. On macOS or Linux:
+
 ```shell
-mvn test
-mvn install
+./mvnw test
+./mvnw install
 ```
+
+On Windows:
+
+```shell
+mvnw.cmd test
+mvnw.cmd install
+```
+
+GitHub Actions runs `verify` on JDK 21 for pushes and pull requests.
 
 The coordinates currently declared in `pom.xml` are:
 
